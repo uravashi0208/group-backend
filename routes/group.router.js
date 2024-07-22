@@ -84,6 +84,4 @@ groupRoute.route("/getaboutus").get(groupcontroller.getAboutUs);
 
 groupRoute.route("/getprivacypolicy").get(groupcontroller.getPrivacyPolicy);
 
-
-
 module.exports = groupRoute;
