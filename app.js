@@ -38,6 +38,13 @@ mongoose
 
 //User router
 app.use("/api", Group);
+
+app.use(
+  "/uploads/groupimage",
+  express.static(path.join(__dirname, "uploads/groupimage"))
+);
+
+
 app.get("/node/angular/*", function (req, res) {
   res.sendFile(path.join(__dirname + "/../vkup1-angular10/dist/index.html"));
 });

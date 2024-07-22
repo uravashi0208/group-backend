@@ -1,9 +1,15 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-let CourseType = new Schema(
+let Category = new Schema(
   {
-    course_type_name: {
+    category_name: {
+      type: String,
+    },
+    category_description: {
+      type: String,
+    },
+    category_image: {
       type: String,
     },
     createdAt: {
@@ -16,8 +22,8 @@ let CourseType = new Schema(
     },
   },
   {
-    collection: "coursetype",
+    collection: "category",
   }
 );
 
-module.exports = mongoose.model("CourseType", CourseType);
+module.exports = mongoose.model("Category", Category);

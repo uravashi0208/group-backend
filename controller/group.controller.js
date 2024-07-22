@@ -1,146 +1,332 @@
 const messages = require("../constant/message");
 const GroupList = require("../model/grouplist");
+const Category = require("../model/category");
+const AboutUs = require("../model/aboutus");
+const PrivacyPolicy = require("../model/privacy_policy");
 
 exports.add_group = async (req, res, next) => {
   try {
-    // Check if the email or phone already exists
-
     // Create user data
-    const userData = {
-      group_name: req.body.group_name,
-      category_id: req.body.category_id,
-      group_link: req.body.group_link,
-      group_image: req.body.group_image,
-      group_description: req.body.last_nagroup_descriptionme,
-    };
+    let userdata;
+    if (req.files && req.files.group_image) {
+      userdata = {
+        group_name: req.body.group_name,
+        category_id: req.body.category_id,
+        group_link: req.body.group_link,
+        group_image: `https://group-backend-nece.onrender.com/uploads/groupimage/${req.files.group_image[0].filename}`,
+        group_description: req.body.last_nagroup_descriptionme,
+      };
+    } else {
+      userdata = {
+        category_id: req.body.category_id,
+        group_link: req.body.group_link,
+      };
+    }
 
     // Create the user in the database
-    const createdUser = await GroupList.create(userData);
+    await GroupList.create(userdata);
 
     // Send response
     return res.json({
       response: true,
-      data: createdUser,
-      message: messages.REGISTER_SUCCESS,
+      message: messages.ADD_GROUP,
     });
   } catch (error) {
     return next(error);
   }
 };
 
-// exports.forgot_password = async (req, res, next) => {
-//   const email = req.body.email;
+exports.add_category = async (req, res, next) => {
+  try {
+    // Create user data
+    let userdata = {
+      category_name: req.body.category_name,
+      category_description: req.body.category_description,
+      category_image: `https://group-backend-nece.onrender.com/uploads/category/${req.files.category_image[0].filename}`,
+    };
 
-//   try {
-//     const foundUser = await User.findOne({ email: email });
+    // Create the user in the database
+    await Category.create(userdata);
 
-//     if (!foundUser) {
-//       return res.json({
-//         response: false,
-//         message: messages.INVALID_EMAIL,
-//       });
-//     }
+    // Send response
+    return res.json({
+      response: true,
+      message: messages.ADD_CATEGORY,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
-//     const randomNumber = Math.floor(1000 + Math.random() * 9000);
-//     const mailOptions = {
-//       from: "zeel129patel@gmail.com",
-//       to: email,
-//       subject: "Password Reset OTP",
-//       text: `This is your OTP for password change: ${randomNumber}`,
-//     };
+exports.getAllCategory = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const skip = (page - 1) * pageSize;
 
-//     transporter.sendMail(mailOptions, async (error, info) => {
-//       if (error) {
-//         console.error(error);
-//         return next(error);
-//       } else {
-//         await User.findOneAndUpdate(
-//           { email: email },
-//           { loginotp: randomNumber },
-//           { new: false }
-//         );
-//         return res.json({
-//           response: true,
-//           message: messages.OTP_SEND,
-//         });
-//       }
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// };
-// exports.verify_otp = async (req, res, next) => {
-//   const { email, otp } = req.body;
+    const pipeline = [
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      { $skip: skip },
+      { $limit: pageSize },
+    ];
 
-//   try {
-//     const foundUser = await User.findOne({
-//       email: email,
-//       loginotp: { $ne: null },
-//     });
+    const categorylist = await Category.aggregate(pipeline).exec();
 
-//     if (!foundUser) {
-//       return res.json({
-//         response: false,
-//         message: messages.RESEND_OTP,
-//       });
-//     }
+    const totalCountPipeline = [
+      {
+        $count: "totalCount",
+      },
+    ];
 
-//     if (foundUser.loginotp.toString() === otp) {
-//       await User.findOneAndUpdate(
-//         { email: email },
-//         { loginotp: "" },
-//         { new: false }
-//       );
-//       return res.json({
-//         response: true,
-//         message: messages.OTP_VERIFY,
-//       });
-//     } else {
-//       return res.json({
-//         response: false,
-//         message: messages.INVALID_OTP,
-//       });
-//     }
-//   } catch (error) {
-//     return next(error);
-//   }
-// };
+    const totalCountResult = await Category.aggregate(
+      totalCountPipeline
+    ).exec();
+    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
 
-// exports.reset_password = async (req, res, next) => {
-//   const { email, password } = req.body;
+    if (categorylist && categorylist.length > 0) {
+      res.json({
+        response: true,
+        data: categorylist,
+        page,
+        pageSize,
+        totalCount,
+      });
+    } else {
+      res.json({
+        response: false,
+        message: "No data found.",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      response: false,
+      message: `An error occurred while fetching leads.`,
+    });
+  }
+};
 
-//   try {
-//     const foundUser = await User.findOne({ email: email });
+exports.getAllGroup = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const skip = (page - 1) * pageSize;
 
-//     if (!foundUser) {
-//       return res.json({
-//         response: false,
-//         message: messages.NO_DATA_FOUND,
-//       });
-//     }
+    const pipeline = [
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      { $skip: skip },
+      { $limit: pageSize },
+    ];
 
-//     const hash = await bcrypt.hash(password, saltRounds); // Use a salt round of 10
-//     await User.findOneAndUpdate(
-//       { email: email },
-//       { password: hash },
-//       { new: false }
-//     );
+    const grouplist = await GroupList.aggregate(pipeline).exec();
 
-//     return res.json({
-//       response: true,
-//       message: messages.RESET_PASSWORD,
-//     });
-//   } catch (error) {
-//     return next(error);
-//   }
-// };
+    const totalCountPipeline = [
+      {
+        $count: "totalCount",
+      },
+    ];
 
-// exports.logout = async (req, res, next) => {
-//   const email = req.query.email;
-//   await User.findOneAndUpdate(
-//     { email: email },
-//     { user_activated_status: false },
-//     { new: false }
-//   );
-//   return res.json({ response: true, message: messages.LOGOUT_SUCCESS });
-// };
+    const totalCountResult = await GroupList.aggregate(
+      totalCountPipeline
+    ).exec();
+    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
+
+    if (grouplist && grouplist.length > 0) {
+      res.json({
+        response: true,
+        data: categorylist,
+        page,
+        pageSize,
+        totalCount,
+      });
+    } else {
+      res.json({
+        response: false,
+        message: "No data found.",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      response: false,
+      message: `An error occurred while fetching leads.`,
+    });
+  }
+};
+
+exports.getAllLinks = async (req, res, next) => {
+  try {
+    const pipeline = [
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ];
+    if (req.query.search) {
+      pipeline.unshift({ group_name: new RegExp(req.query.search, "i") });
+    } else {
+      const page = parseInt(req.query.page) || 1;
+      const pageSize = parseInt(req.query.pageSize) || 10;
+      const skip = (page - 1) * pageSize;
+      pipeline.unshift({ $skip: skip }, { $limit: pageSize });
+    }
+
+    const allLinksList = await GroupList.aggregate(pipeline).exec();
+
+    const totalCountPipeline = [
+      {
+        $match: {
+          isLead: true,
+          iscustomer: { $ne: true },
+          assigne_staff: { $eq: "" },
+        },
+      },
+      {
+        $count: "totalCount",
+      },
+    ];
+
+    const totalCountResult = await GroupList.aggregate(
+      totalCountPipeline
+    ).exec();
+    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
+
+    if (allLinksList && allLinksList.length > 0) {
+      res.json({
+        response: true,
+        data: allLinksList,
+        page,
+        pageSize,
+        totalCount,
+      });
+    } else {
+      res.json({
+        response: false,
+        message: "No data found.",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      response: false,
+      message: `An error occurred while fetching leads.`,
+    });
+  }
+};
+
+exports.getAllLinkByCategory = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const pipeline = [
+      {
+        $match: {
+          category_id: id,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ];
+
+    const allLinksListByCategory = await GroupList.aggregate(pipeline).exec();
+
+    const totalCountPipeline = [
+      {
+        $match: {
+          isLead: true,
+          iscustomer: { $ne: true },
+          assigne_staff: { $eq: "" },
+        },
+      },
+      {
+        $count: "totalCount",
+      },
+    ];
+
+    const totalCountResult = await GroupList.aggregate(
+      totalCountPipeline
+    ).exec();
+    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
+
+    if (allLinksListByCategory && allLinksListByCategory.length > 0) {
+      res.json({
+        response: true,
+        data: allLinksListByCategory,
+        page,
+        pageSize,
+        totalCount,
+      });
+    } else {
+      res.json({
+        response: false,
+        message: "No data found.",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      response: false,
+      message: `An error occurred while fetching leads.`,
+    });
+  }
+};
+
+exports.deletelinks = async (req, res, next) => {
+  const _id = req.params.id;
+  try {
+    const deletedLinks = await GroupList.findByIdAndDelete(_id);
+    if (!deletedLinks) {
+      res.json({ response: false, message: messages.NO_DATA_FOUND });
+    } else {
+      res.json({
+        response: true,
+        message: messages.DELETE_LINKS,
+      });
+    }
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getAboutUs = async (req, res, next) => {
+  try {
+    const aboutusdata = await AboutUs.find({})
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+    if (aboutusdata.length > 0) {
+      res.status(200).json({ response: true, data: aboutusdata });
+    } else {
+      res
+        .status(404)
+        .json({ response: false, message: messages.NO_DATA_FOUND });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getPrivacyPolicy = async (req, res, next) => {
+  try {
+    const privacypolicydata = await PrivacyPolicy.find({})
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+    if (privacypolicydata.length > 0) {
+      res.status(200).json({ response: true, data: privacypolicydata });
+    } else {
+      res
+        .status(404)
+        .json({ response: false, message: messages.NO_DATA_FOUND });
+    }
+  } catch (error) {
+    next(error);
+  }
+};

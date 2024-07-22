@@ -12,11 +12,23 @@ const storage = multer.diskStorage({
   },
 });
 
+const storage_category = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/category/");
+  },
+  filename: (req, file, cb) => {
+    const fileName = file.originalname.toLowerCase().split(" ").join("-");
+    cb(null, Date.now() + "-" + fileName);
+  },
+});
+
 const fileFilter = function (req, file, cb) {
   const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
   if (
-    file.fieldname === "group_image" &&
-    allowedMimeTypes.includes(file.mimetype)
+    (file.fieldname === "group_image" &&
+      allowedMimeTypes.includes(file.mimetype)) ||
+    (file.fieldname === "category_image" &&
+      allowedMimeTypes.includes(file.mimetype))
   ) {
     cb(null, true); // Accept the file
   } else {
@@ -32,9 +44,15 @@ const upload = multer({
   },
 });
 
-const groupcontroller = require("../controller/group.controller");
+const upload_category = multer({
+  storage: storage_category,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 * 20, // Limit file size to 5MB
+  },
+});
 
-groupRoute.route("/addgroup").post(groupcontroller.add_group);
+const groupcontroller = require("../controller/group.controller");
 
 groupRoute
   .route("/addgroup")
@@ -43,12 +61,29 @@ groupRoute
     groupcontroller.add_group
   );
 
-// groupRoute.route("/register").post(groupcontroller.register);
+groupRoute
+  .route("/addcategory")
+  .post(
+    upload_category.fields([{ name: "category_image", maxCount: 1 }]),
+    groupcontroller.add_category
+  );
 
-// groupRoute.route("/forgot-password").post(groupcontroller.forgot_password);
+groupRoute.route("/getallcategory").get(groupcontroller.getAllCategory);
 
-// groupRoute.route("/verify-otp").post(groupcontroller.verify_otp);
+groupRoute.route("/getallgroup").get(groupcontroller.getAllGroup);
 
-// groupRoute.route("/reserpassword").post(groupcontroller.reset_password);
+groupRoute.route("/getalllinks").get(groupcontroller.getAllLinks);
+
+groupRoute
+  .route("/getlinkbycategoryy/:id")
+  .get(groupcontroller.getAllLinkByCategory);
+
+groupRoute.route("/deletelink/:id").delete(groupcontroller.deletelinks);
+
+groupRoute.route("/getaboutus").get(groupcontroller.getAboutUs);
+
+groupRoute.route("/getprivacypolicy").get(groupcontroller.getPrivacyPolicy);
+
+
 
 module.exports = groupRoute;
