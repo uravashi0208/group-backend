@@ -3,6 +3,7 @@ const GroupList = require("../model/grouplist");
 const Category = require("../model/category");
 const AboutUs = require("../model/aboutus");
 const PrivacyPolicy = require("../model/privacy_policy");
+const { ObjectId } = require("mongodb");
 
 exports.add_group = async (req, res, next) => {
   try {
@@ -141,7 +142,7 @@ exports.getAllGroup = async (req, res, next) => {
     if (grouplist && grouplist.length > 0) {
       res.json({
         response: true,
-        data: categorylist,
+        data: grouplist,
         page,
         pageSize,
         totalCount,
@@ -162,6 +163,8 @@ exports.getAllGroup = async (req, res, next) => {
 
 exports.getAllLinks = async (req, res, next) => {
   try {
+    let page = 1;
+    let pageSize = 10;
     const pipeline = [
       {
         $sort: {
@@ -170,10 +173,14 @@ exports.getAllLinks = async (req, res, next) => {
       },
     ];
     if (req.query.search) {
-      pipeline.unshift({ group_name: new RegExp(req.query.search, "i") });
+      pipeline.unshift({
+        $match: {
+          group_name: new RegExp(req.query.search, "i"),
+        },
+      });
     } else {
-      const page = parseInt(req.query.page) || 1;
-      const pageSize = parseInt(req.query.pageSize) || 10;
+      page = parseInt(req.query.page) || 1;
+      pageSize = parseInt(req.query.pageSize) || 10;
       const skip = (page - 1) * pageSize;
       pipeline.unshift({ $skip: skip }, { $limit: pageSize });
     }
@@ -182,13 +189,6 @@ exports.getAllLinks = async (req, res, next) => {
 
     const totalCountPipeline = [
       {
-        $match: {
-          isLead: true,
-          iscustomer: { $ne: true },
-          assigne_staff: { $eq: "" },
-        },
-      },
-      {
         $count: "totalCount",
       },
     ];
@@ -196,7 +196,13 @@ exports.getAllLinks = async (req, res, next) => {
     const totalCountResult = await GroupList.aggregate(
       totalCountPipeline
     ).exec();
-    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
+    const totalCount = req.query.search
+      ? allLinksList.length > 0
+        ? allLinksList.length
+        : totalCountResult[0]
+        ? totalCountResult[0].totalCount
+        : 0
+      : 0;
 
     if (allLinksList && allLinksList.length > 0) {
       res.json({
@@ -226,7 +232,7 @@ exports.getAllLinkByCategory = async (req, res, next) => {
     const pipeline = [
       {
         $match: {
-          category_id: id,
+          category_id: new ObjectId(id),
         },
       },
       {
@@ -238,31 +244,10 @@ exports.getAllLinkByCategory = async (req, res, next) => {
 
     const allLinksListByCategory = await GroupList.aggregate(pipeline).exec();
 
-    const totalCountPipeline = [
-      {
-        $match: {
-          isLead: true,
-          iscustomer: { $ne: true },
-          assigne_staff: { $eq: "" },
-        },
-      },
-      {
-        $count: "totalCount",
-      },
-    ];
-
-    const totalCountResult = await GroupList.aggregate(
-      totalCountPipeline
-    ).exec();
-    const totalCount = totalCountResult[0] ? totalCountResult[0].totalCount : 0;
-
     if (allLinksListByCategory && allLinksListByCategory.length > 0) {
       res.json({
         response: true,
         data: allLinksListByCategory,
-        page,
-        pageSize,
-        totalCount,
       });
     } else {
       res.json({
@@ -302,7 +287,7 @@ exports.getAboutUs = async (req, res, next) => {
       .lean()
       .exec();
     if (aboutusdata.length > 0) {
-      res.status(200).json({ response: true, data: aboutusdata });
+      res.status(200).json({ response: true, data: aboutusdata[0] });
     } else {
       res
         .status(404)
@@ -320,7 +305,7 @@ exports.getPrivacyPolicy = async (req, res, next) => {
       .lean()
       .exec();
     if (privacypolicydata.length > 0) {
-      res.status(200).json({ response: true, data: privacypolicydata });
+      res.status(200).json({ response: true, data: privacypolicydata[0] });
     } else {
       res
         .status(404)
