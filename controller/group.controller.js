@@ -192,6 +192,20 @@ exports.getAllLinks = async (req, res, next) => {
     let pageSize = 10;
     const pipeline = [
       {
+        $lookup: {
+          from: "category",
+          localField: "category_id",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$categoryDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $sort: {
           createdAt: -1,
         },
@@ -255,6 +269,20 @@ exports.getAllLinkByCategory = async (req, res, next) => {
   try {
     const id = req.params.id;
     const pipeline = [
+      {
+        $lookup: {
+          from: "category",
+          localField: "category_id",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$categoryDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $match: {
           category_id: new ObjectId(id),
