@@ -84,4 +84,6 @@ groupRoute.route("/getaboutus").get(groupcontroller.getAboutUs);
 
 groupRoute.route("/getprivacypolicy").get(groupcontroller.getPrivacyPolicy);
 
+groupRoute.route("/deletecategory/:id").delete(groupcontroller.deletecategory);
+
 module.exports = groupRoute;

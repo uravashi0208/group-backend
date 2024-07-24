@@ -40,6 +40,17 @@ exports.add_group = async (req, res, next) => {
 exports.add_category = async (req, res, next) => {
   try {
     // Create user data
+    const existingCategory = await Category.findOne({
+      category_name: req.body.category_name,
+    });
+
+    if (existingCategory) {
+      return res.json({
+        response: false,
+        message: messages.RECORD_EXIST,
+      });
+    }
+
     let userdata = {
       category_name: req.body.category_name,
       category_description: req.body.category_description,
@@ -117,6 +128,20 @@ exports.getAllGroup = async (req, res, next) => {
     const skip = (page - 1) * pageSize;
 
     const pipeline = [
+      {
+        $lookup: {
+          from: "category",
+          localField: "category_id",
+          foreignField: "_id",
+          as: "categoryDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$categoryDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $sort: {
           createdAt: -1,
@@ -313,5 +338,22 @@ exports.getPrivacyPolicy = async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+  }
+};
+
+exports.deletecategory = async (req, res, next) => {
+  const _id = req.params.id;
+  try {
+    const deletedCategory = await Category.findByIdAndDelete(_id);
+    if (!deletedCategory) {
+      res.json({ response: false, message: messages.NO_DATA_FOUND });
+    } else {
+      res.json({
+        response: true,
+        message: messages.DELETE_CATEGORY,
+      });
+    }
+  } catch (error) {
+    return next(error);
   }
 };
