@@ -4,7 +4,15 @@ const groupRoute = express.Router();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/groupimage/");
+    const uploadPath = "uploads/groupimage/";
+
+    // Check if directory exists
+    fs.mkdir(uploadPath, { recursive: true }, (err) => {
+      if (err) {
+        return cb(err, uploadPath);
+      }
+      cb(null, uploadPath);
+    });
   },
   filename: (req, file, cb) => {
     const fileName = file.originalname.toLowerCase().split(" ").join("-");
@@ -14,7 +22,15 @@ const storage = multer.diskStorage({
 
 const storage_category = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/category/");
+    const uploadPath = "uploads/category/";
+
+    // Check if directory exists
+    fs.mkdir(uploadPath, { recursive: true }, (err) => {
+      if (err) {
+        return cb(err, uploadPath);
+      }
+      cb(null, uploadPath);
+    });
   },
   filename: (req, file, cb) => {
     const fileName = file.originalname.toLowerCase().split(" ").join("-");
