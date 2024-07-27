@@ -103,21 +103,20 @@ exports.add_category = async (req, res, next) => {
 
 exports.getAllCategory = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const page = req.query.page ? parseInt(req.query.page) : "";
+    const pageSize = req.query.pageSize ? parseInt(req.query.pageSize) : 0;
     const skip = (page - 1) * pageSize;
 
-    const pipeline = [
+    const categorylist = await Category.aggregate([
       {
         $sort: {
           createdAt: -1,
+          _id: -1, // Secondary sort to ensure consistent order
         },
       },
       { $skip: skip },
       { $limit: pageSize },
-    ];
-
-    const categorylist = await Category.aggregate(pipeline).exec();
+    ]).exec();
 
     const totalCountPipeline = [
       {
@@ -154,11 +153,11 @@ exports.getAllCategory = async (req, res, next) => {
 
 exports.getAllGroup = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const page = req.query.page ? parseInt(req.query.page) : "";
+    const pageSize = req.query.pageSize ? parseInt(req.query.pageSize) : 0;
     const skip = (page - 1) * pageSize;
 
-    const pipeline = [
+    const grouplist = await GroupList.aggregate([
       {
         $lookup: {
           from: "category",
@@ -176,13 +175,12 @@ exports.getAllGroup = async (req, res, next) => {
       {
         $sort: {
           createdAt: -1,
+          _id: -1, // Secondary sort to ensure consistent order
         },
       },
       { $skip: skip },
       { $limit: pageSize },
-    ];
-
-    const grouplist = await GroupList.aggregate(pipeline).exec();
+    ]).exec();
 
     const totalCountPipeline = [
       {
