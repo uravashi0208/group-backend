@@ -4,17 +4,38 @@ const Category = require("../model/category");
 const AboutUs = require("../model/aboutus");
 const PrivacyPolicy = require("../model/privacy_policy");
 const { ObjectId } = require("mongodb");
+const fs = require("fs");
+
+const cloudinary = require("cloudinary");
+
+cloudinary.v2.config({
+  cloud_name: "dxc9szqbb",
+  api_key: "388158792784725",
+  api_secret: "KOfek0DrWn-Fpf9BAyfTMA6a2bU",
+  secure: true,
+});
 
 exports.add_group = async (req, res, next) => {
   try {
     // Create user data
     let userdata;
     if (req.files && req.files.group_image) {
+      const file = req.files.group_image[0];
+
+      const uploadResult = await cloudinary.uploader
+        .upload(file.path, {
+          public_id: "shoes",
+        })
+        .catch((error) => {
+          console.log(error);
+          throw new Error("Image upload failed");
+        });
+
       userdata = {
         group_name: req.body.group_name,
         category_id: req.body.category_id,
         group_link: req.body.group_link,
-        group_image: `https://group-backend-nece.onrender.com/uploads/groupimage/${req.files.group_image[0].filename}`,
+        group_image: uploadResult.secure_url,
         group_description: req.body.last_nagroup_descriptionme,
       };
     } else {
@@ -51,10 +72,20 @@ exports.add_category = async (req, res, next) => {
       });
     }
 
+    const file = req.files.category_image[0];
+
+    const uploadResult = await cloudinary.uploader
+      .upload(file.path, {
+        public_id: "shoes",
+      })
+      .catch((error) => {
+        console.log(error);
+        throw new Error("Image upload failed");
+      });
     let userdata = {
       category_name: req.body.category_name,
       category_description: req.body.category_description,
-      category_image: `https://group-backend-nece.onrender.com/uploads/category/${req.files.category_image[0].filename}`,
+      category_image: uploadResult.secure_url,
     };
 
     // Create the user in the database
