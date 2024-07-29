@@ -42,6 +42,8 @@ exports.add_group = async (req, res, next) => {
       userdata = {
         category_id: req.body.category_id,
         group_link: req.body.group_link,
+        group_name: req.body.group_name,
+        group_description: req.body.last_nagroup_descriptionme,
       };
     }
 
@@ -267,10 +269,10 @@ exports.getAllLinks = async (req, res, next) => {
     const totalCount = req.query.search
       ? allLinksList.length > 0
         ? allLinksList.length
-        : totalCountResult[0]
+        : totalCountResult[0].totalCount
         ? totalCountResult[0].totalCount
         : 0
-      : 0;
+      : totalCountResult[0].totalCount;
 
     if (allLinksList && allLinksList.length > 0) {
       res.json({
